@@ -1,0 +1,9 @@
+[package]
+name = "wasm-multi"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.15.3"
+bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }
+bevy_matchbox = { version = "0.11", features = ["ggrs"] }
