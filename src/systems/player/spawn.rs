@@ -1,3 +1,4 @@
+use avian2d::prelude::{Collider, RigidBody};
 use bevy::prelude::*;
 use bevy_ggrs::AddRollbackCommandExtension;
 
@@ -12,6 +13,8 @@ pub fn spawn(mut commands: Commands) {
                 custom_size: Some(Vec2::new(1., 1.)),
                 ..default()
             },
+            RigidBody::Dynamic,
+            Collider::rectangle(1., 1.),
         ))
         .add_rollback();
 
@@ -25,6 +28,8 @@ pub fn spawn(mut commands: Commands) {
                 custom_size: Some(Vec2::new(1., 1.)),
                 ..default()
             },
+            RigidBody::Dynamic,
+            Collider::rectangle(1., 1.),
         ))
         .add_rollback();
 }

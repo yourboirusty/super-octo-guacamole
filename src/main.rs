@@ -1,4 +1,6 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy_ecs_ldtk::prelude::*;
 use bevy_ggrs::{GgrsApp, GgrsPlugin, GgrsSchedule, ReadInputs};
 use config::MultiplayerConfig;
 
@@ -20,6 +22,8 @@ fn main() {
                 ..default()
             }),
             GgrsPlugin::<MultiplayerConfig>::default(),
+            PhysicsPlugins::default(),
+            LdtkPlugin,
         ))
         .rollback_component_with_clone::<Transform>()
         .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
@@ -34,5 +38,6 @@ fn main() {
         .add_systems(Update, (systems::multiplayer::wait_for_payers,))
         .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
         .add_systems(GgrsSchedule, systems::player::move_players)
+        .insert_resource(LevelSelection::index(0))
         .run();
 }

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-
-pub fn setup(mut commands: Commands) {
+use bevy_ecs_ldtk::prelude::*;
+pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera2d,
         OrthographicProjection {
@@ -10,4 +10,8 @@ pub fn setup(mut commands: Commands) {
             ..OrthographicProjection::default_2d()
         },
     ));
+    commands.spawn(LdtkWorldBundle {
+        ldtk_handle: asset_server.load("test.ldtk").into(),
+        ..Default::default()
+    });
 }
