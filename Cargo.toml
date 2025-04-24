@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = "0.15.3"
+avian2d = "0.2.1"
+
+bevy = { version = "0.15.3", features = ["dynamic_linking"] }
 bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }
 bevy_matchbox = { version = "0.11", features = ["ggrs"] }
