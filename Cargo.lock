@@ -6238,6 +6238,7 @@ dependencies = [
  "avian2d",
  "bevy",
  "bevy_ecs_ldtk",
+ "bevy_ecs_tilemap",
  "bevy_ggrs",
  "bevy_matchbox",
 ]

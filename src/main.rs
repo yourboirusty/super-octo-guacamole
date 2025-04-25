@@ -11,16 +11,18 @@ mod systems;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    // Fill browser window
-                    fit_canvas_to_parent: true,
-                    // Allow for browser shortcuts
-                    prevent_default_event_handling: false,
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        // Fill browser window
+                        fit_canvas_to_parent: true,
+                        // Allow for browser shortcuts
+                        prevent_default_event_handling: false,
+                        ..default()
+                    }),
                     ..default()
-                }),
-                ..default()
-            }),
+                })
+                .set(ImagePlugin::default_nearest()),
             GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default(),
             LdtkPlugin,
