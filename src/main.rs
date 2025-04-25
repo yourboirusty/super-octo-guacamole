@@ -23,12 +23,18 @@ fn main() {
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
+            LdtkPlugin,
             GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default(),
-            LdtkPlugin,
         ))
+        .insert_resource(LdtkSettings {
+            level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {
+                load_level_neighbors: false,
+            },
+            set_clear_color: SetClearColor::No,
+            ..Default::default()
+        })
         .rollback_component_with_clone::<Transform>()
-        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .add_systems(
             Startup,
             (
@@ -37,7 +43,13 @@ fn main() {
                 systems::multiplayer::start_matchbox_socket,
             ),
         )
-        .add_systems(Update, (systems::multiplayer::wait_for_payers,))
+        .add_systems(
+            Update,
+            (
+                systems::multiplayer::wait_for_payers,
+                systems::player::camera_fit_inside_current_level,
+            ),
+        )
         .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
         .add_systems(GgrsSchedule, systems::player::move_players)
         .insert_resource(LevelSelection::index(0))
