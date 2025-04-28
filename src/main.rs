@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use bevy_ggrs::{GgrsApp, GgrsPlugin, ReadInputs};
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
-use config::MultiplayerConfig;
+use config::{LEVEL_IIDS, MultiplayerConfig};
 use game::GameState;
 use systems::{check_asset_loading, player::PlayerPlugin};
 
@@ -57,6 +57,6 @@ fn main() {
             (systems::multiplayer::wait_for_payers.run_if(in_state(GameState::Playing)),),
         )
         .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
-        .insert_resource(LevelSelection::index(0))
+        .insert_resource(LevelSelection::Iid(LevelIid::new(LEVEL_IIDS[0])))
         .run();
 }

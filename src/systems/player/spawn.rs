@@ -62,6 +62,8 @@ pub fn spawn_player(
     mut spawn_points_q: Query<(Entity, &mut SpawnLocation)>,
     mut players_q: Query<&mut Transform, With<Player>>,
     mut player_entered: EventReader<SpawnPlayerEvent>,
+    level_query: Query<(Entity, &LevelIid)>,
+    level_selection: Res<LevelSelection>,
     mut local: Local<PlayerSpawnState>,
     mut commands: Commands,
 ) {
@@ -78,6 +80,22 @@ pub fn spawn_player(
         local.players_waiting.push(player_event.0);
     }
 
+    let current_level_iid = match &*level_selection {
+        LevelSelection::Iid(iid) => iid,
+        _ => panic!("Please use iid only thx uwu"),
+    };
+
+    let mut parent_entity_option: Option<Entity> = None;
+
+    for (entity, level_id) in &level_query {
+        if *level_id == *current_level_iid {
+            parent_entity_option = Some(entity.clone());
+            break;
+        }
+    }
+
+    let current_level_entity = parent_entity_option.expect("Current level not found");
+
     while let Some(player) = local.players_waiting.pop() {
         if local.loaded_spawns.len() == 0 {
             local.players_waiting.push(player);
@@ -89,6 +107,7 @@ pub fn spawn_player(
             .expect("Event sent about nonexisting player");
         let z_ordering = player_transform.translation.z;
         let spawn = local.get_spawn();
-        player_transform.translation = Vec3::from_array([spawn.x, spawn.y, z_ordering])
+        player_transform.translation = Vec3::from_array([spawn.x, spawn.y, z_ordering]);
+        commands.entity(player).set_parent(current_level_entity);
     }
 }
