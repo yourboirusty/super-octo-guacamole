@@ -5,7 +5,11 @@ use bevy_ggrs::{
 };
 use bevy_matchbox::MatchboxSocket;
 
-use crate::config::*;
+use crate::systems::player::SpawnPlayerEvent;
+use crate::{
+    config::*,
+    systems::player::{Player, PlayerBundle},
+};
 
 pub fn start_matchbox_socket(mut commands: Commands) {
     // wasm_test -> scope
@@ -15,7 +19,11 @@ pub fn start_matchbox_socket(mut commands: Commands) {
     commands.insert_resource(MatchboxSocket::new_unreliable(room_url));
 }
 
-pub fn wait_for_payers(mut commands: Commands, mut socket: ResMut<MatchboxSocket>) {
+pub fn wait_for_payers(
+    mut commands: Commands,
+    mut socket: ResMut<MatchboxSocket>,
+    mut spawned_event: EventWriter<SpawnPlayerEvent>,
+) {
     if socket.get_channel(0).is_err() {
         return;
     }
@@ -36,6 +44,13 @@ pub fn wait_for_payers(mut commands: Commands, mut socket: ResMut<MatchboxSocket
         session_builder = session_builder
             .add_player(player, i)
             .expect("failed to add player");
+        info!("Created player");
+        let player_c = commands.spawn(PlayerBundle {
+            player: Player { handle: i },
+            ..Default::default()
+        });
+
+        spawned_event.send(SpawnPlayerEvent(player_c.id()));
     }
 
     // move the channel out of the socket (required because GGRS takes ownership of it)

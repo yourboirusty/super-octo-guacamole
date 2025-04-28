@@ -1,11 +1,15 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use bevy_ggrs::{GgrsApp, GgrsPlugin, GgrsSchedule, ReadInputs};
+use bevy_ggrs::{GgrsApp, GgrsPlugin, ReadInputs};
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use config::MultiplayerConfig;
+use game::GameState;
+use systems::{check_asset_loading, player::PlayerPlugin};
 
 mod components;
 mod config;
+mod game;
 mod systems;
 
 fn main() {
@@ -26,6 +30,9 @@ fn main() {
             LdtkPlugin,
             GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default(),
+            PlayerPlugin,
+            // EguiPlugin {},
+            WorldInspectorPlugin::new(),
         ))
         .insert_resource(LdtkSettings {
             level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {
@@ -34,24 +41,22 @@ fn main() {
             set_clear_color: SetClearColor::No,
             ..Default::default()
         })
+        .init_state::<GameState>()
         .rollback_component_with_clone::<Transform>()
         .add_systems(
             Startup,
-            (
-                systems::setup,
-                systems::player::spawn,
-                systems::multiplayer::start_matchbox_socket,
-            ),
+            (systems::setup, systems::multiplayer::start_matchbox_socket),
+        )
+        .add_systems(Update, (systems::player::camera_fit_inside_current_level,))
+        .add_systems(
+            Update,
+            check_asset_loading.run_if(in_state(GameState::Loading)),
         )
         .add_systems(
             Update,
-            (
-                systems::multiplayer::wait_for_payers,
-                systems::player::camera_fit_inside_current_level,
-            ),
+            (systems::multiplayer::wait_for_payers.run_if(in_state(GameState::Playing)),),
         )
         .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
-        .add_systems(GgrsSchedule, systems::player::move_players)
         .insert_resource(LevelSelection::index(0))
         .run();
 }

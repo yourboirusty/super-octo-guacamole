@@ -7,6 +7,7 @@ edition = "2024"
 avian2d = "0.2.1"
 
 bevy = { version = "0.15.3", features = ["dynamic_linking", "webgl2"] }
+bevy-inspector-egui = "0.30.0"
 bevy_ecs_ldtk = {version = "0.11.0", features = [ "atlas" ]}
 
 bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }

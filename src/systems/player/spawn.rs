@@ -1,35 +1,94 @@
-use avian2d::prelude::{Collider, RigidBody};
 use bevy::prelude::*;
-use bevy_ggrs::AddRollbackCommandExtension;
+use bevy_ecs_ldtk::prelude::*;
+use bevy_ecs_ldtk::utils::ldtk_pixel_coords_to_translation_pivoted;
 
-use crate::components::Player;
+use super::Player;
 
-pub fn spawn(mut commands: Commands) {
-    commands
-        .spawn((
-            Player::new(0),
-            Sprite {
-                color: Color::srgb(0., 0.47, 1.),
-                custom_size: Some(Vec2::new(1., 1.)),
-                ..default()
-            },
-            RigidBody::Dynamic,
-            Collider::rectangle(1., 1.),
-        ))
-        .add_rollback();
+#[derive(Default, Bundle)]
+pub struct SpawnPointBundle {
+    locations: SpawnLocation,
+}
+#[derive(Default, Component, Clone)]
+pub struct SpawnLocation(Vec2);
 
-    // Player 2
-    commands
-        .spawn((
-            Player::new(1),
-            Transform::from_translation(Vec3::new(2., 0., 0.)),
-            Sprite {
-                color: Color::srgb(0., 0.4, 0.),
-                custom_size: Some(Vec2::new(1., 1.)),
-                ..default()
-            },
-            RigidBody::Dynamic,
-            Collider::rectangle(1., 1.),
-        ))
-        .add_rollback();
+#[derive(Default, Clone)]
+pub struct PlayerSpawnState {
+    pub loaded_spawns: Vec<Vec2>,
+    original_spawns: Vec<Vec2>,
+    pub players_waiting: Vec<Entity>,
+}
+
+impl PlayerSpawnState {
+    pub fn get_spawn(&mut self) -> Vec2 {
+        let result = match self.loaded_spawns.pop() {
+            None => {
+                self.loaded_spawns = self.original_spawns.clone();
+                None
+            }
+            Some(spawn) => Some(spawn),
+        };
+        if result.is_none() && self.original_spawns.len() == 0 {
+            panic!("Trying to get spawns that aren't loaded");
+        }
+        result.expect("")
+    }
+}
+
+#[derive(Event)]
+pub struct SpawnPlayerEvent(pub Entity);
+
+impl LdtkEntity for SpawnPointBundle {
+    fn bundle_entity(
+        entity_instance: &EntityInstance,
+        layer_instance: &LayerInstance,
+        _: Option<&Handle<Image>>,
+        _: Option<&TilesetDefinition>,
+        _: &AssetServer,
+        _: &mut Assets<TextureAtlasLayout>,
+    ) -> SpawnPointBundle {
+        let spawn = ldtk_pixel_coords_to_translation_pivoted(
+            entity_instance.px,
+            layer_instance.c_hei * layer_instance.grid_size,
+            IVec2::new(entity_instance.width, entity_instance.height),
+            entity_instance.pivot,
+        );
+
+        let locations = SpawnLocation(spawn);
+
+        SpawnPointBundle { locations }
+    }
+}
+pub fn spawn_player(
+    mut spawn_points_q: Query<(Entity, &mut SpawnLocation)>,
+    mut players_q: Query<&mut Transform, With<Player>>,
+    mut player_entered: EventReader<SpawnPlayerEvent>,
+    mut local: Local<PlayerSpawnState>,
+    mut commands: Commands,
+) {
+    for (entity, spawn_location) in &mut spawn_points_q {
+        local.loaded_spawns.push(spawn_location.0.clone());
+        commands.entity(entity).despawn();
+    }
+
+    if local.loaded_spawns.len() == 0 {
+        return;
+    }
+
+    for player_event in &mut player_entered.read() {
+        local.players_waiting.push(player_event.0);
+    }
+
+    while let Some(player) = local.players_waiting.pop() {
+        if local.loaded_spawns.len() == 0 {
+            local.players_waiting.push(player);
+            return;
+        }
+        info!("Spawning player {}", player);
+        let mut player_transform = players_q
+            .get_mut(player)
+            .expect("Event sent about nonexisting player");
+        let z_ordering = player_transform.translation.z;
+        let spawn = local.get_spawn();
+        player_transform.translation = Vec3::from_array([spawn.x, spawn.y, z_ordering])
+    }
 }

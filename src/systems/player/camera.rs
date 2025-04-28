@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::components::Player;
+use super::Player;
 
-const ASPECT_RATIO: f32 = 16. / 9.;
+const ASPECT_RATIO: f32 = 4. / 3.;
 
 pub fn camera_fit_inside_current_level(
     mut camera_query: Query<
@@ -24,8 +24,6 @@ pub fn camera_fit_inside_current_level(
         ..
     }) = player_query.get_single()
     {
-        let player_translation = *player_translation;
-
         let (mut orthographic_projection, mut camera_transform) = camera_query.single_mut();
 
         for (level_transform, level_iid) in &level_query {

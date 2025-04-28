@@ -1,6 +1,8 @@
-use crate::{components::Player, config::*};
+use crate::config::*;
 use bevy::prelude::*;
 use bevy_ggrs::PlayerInputs;
+
+use super::Player;
 
 pub fn move_players(
     mut players: Query<(&mut Transform, &Player)>,
