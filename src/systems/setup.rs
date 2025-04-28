@@ -12,7 +12,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera2d,
         OrthographicProjection {
-            scale: 0.5,
+            scale: 0.25,
             ..OrthographicProjection::default_2d()
         },
     ));
