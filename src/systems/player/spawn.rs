@@ -109,6 +109,7 @@ pub fn spawn_player(
             .expect("Event sent about nonexisting player");
         let spawn = local.get_spawn();
         player_transform.translation = Vec3::from_array([spawn.x, spawn.y, PLAYER_Z]);
+        player_transform.scale = Vec3::from((0.5, 0.5, 0.5));
         commands.entity(player).set_parent(current_level_entity);
     }
 }
