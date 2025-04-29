@@ -23,6 +23,8 @@ pub fn wait_for_payers(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket>,
     mut spawned_event: EventWriter<SpawnPlayerEvent>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Res<AssetServer>,
 ) {
     if socket.get_channel(0).is_err() {
         return;
@@ -45,8 +47,18 @@ pub fn wait_for_payers(
             .add_player(player, i)
             .expect("failed to add player");
         info!("Created player");
+        let texture = asset_server.load("atlas/Player.png");
+        let layout = texture_atlases.add(TextureAtlasLayout::from_grid(
+            UVec2::new(32, 32),
+            7,
+            6,
+            None,
+            None,
+        ));
+        let atlas = TextureAtlas { index: 0, layout };
         let player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
+            sprite_sheet: Sprite::from_atlas_image(texture, atlas),
             ..Default::default()
         });
 

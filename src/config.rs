@@ -7,6 +7,8 @@ pub const INPUT_RIGHT: u8 = 1 << 3;
 pub const INPUT_FIRE: u8 = 1 << 4;
 pub const INPUT_USE: u8 = 1 << 5;
 
+pub const PLAYER_Z: f32 = 9.0;
+
 pub type MultiplayerConfig = bevy_ggrs::GgrsConfig<u8, PeerId>;
 
 pub const LEVEL_IIDS: [&str; 1] = ["2d3efb50-1030-11f0-bddd-f1f4e985be26"];

@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use bevy_ecs_ldtk::utils::ldtk_pixel_coords_to_translation_pivoted;
 
+use crate::config::PLAYER_Z;
+
 use super::Player;
 
 #[derive(Default, Bundle)]
@@ -105,9 +107,8 @@ pub fn spawn_player(
         let mut player_transform = players_q
             .get_mut(player)
             .expect("Event sent about nonexisting player");
-        let z_ordering = player_transform.translation.z;
         let spawn = local.get_spawn();
-        player_transform.translation = Vec3::from_array([spawn.x, spawn.y, z_ordering]);
+        player_transform.translation = Vec3::from_array([spawn.x, spawn.y, PLAYER_Z]);
         commands.entity(player).set_parent(current_level_entity);
     }
 }
