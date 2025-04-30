@@ -5,7 +5,10 @@ use bevy_ggrs::{
 };
 use bevy_matchbox::MatchboxSocket;
 
-use crate::systems::player::SpawnPlayerEvent;
+use crate::systems::{
+    colliders::{CharacterCollider, ColliderBundle},
+    player::SpawnPlayerEvent,
+};
 use crate::{
     config::*,
     systems::player::{Player, PlayerBundle},
@@ -59,6 +62,7 @@ pub fn wait_for_payers(
         let player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
             sprite_sheet: Sprite::from_atlas_image(texture, atlas),
+            collider_bundle: ColliderBundle::from(CharacterCollider::Player),
             ..Default::default()
         });
 

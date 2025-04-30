@@ -14,6 +14,8 @@ use spawn::spawn_player;
 
 use crate::game::GameState;
 
+use super::colliders::ColliderBundle;
+
 #[derive(Default, Component)]
 pub struct Player {
     pub handle: usize,
@@ -22,6 +24,8 @@ pub struct Player {
 #[derive(Bundle, Default, LdtkEntity)]
 pub struct PlayerBundle {
     pub player: Player,
+
+    pub collider_bundle: ColliderBundle,
 
     #[sprite_sheet]
     pub sprite_sheet: Sprite,

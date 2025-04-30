@@ -2,7 +2,7 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use bevy_ggrs::{GgrsApp, GgrsPlugin, ReadInputs};
-use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use config::{LEVEL_IIDS, MultiplayerConfig};
 use game::GameState;
 use systems::{check_asset_loading, player::PlayerPlugin};
@@ -31,7 +31,6 @@ fn main() {
             GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default(),
             PlayerPlugin,
-            // EguiPlugin {},
             WorldInspectorPlugin::new(),
         ))
         .insert_resource(LdtkSettings {
