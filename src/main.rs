@@ -32,6 +32,8 @@ fn main() {
             PhysicsPlugins::default(),
             PlayerPlugin,
             WorldInspectorPlugin::new(),
+            PhysicsDebugPlugin::default(),
+            systems::walls::WallPlugin,
         ))
         .insert_resource(LdtkSettings {
             level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {

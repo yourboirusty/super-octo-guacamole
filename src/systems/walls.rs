@@ -6,10 +6,10 @@ use bevy::{
 use bevy_ecs_ldtk::prelude::*;
 
 #[derive(Default, Component)]
-struct Wall;
+pub struct Wall;
 
 #[derive(Default, Bundle, LdtkIntCell)]
-struct WallBundle {
+pub struct WallBundle {
     wall: Wall,
 }
 
@@ -155,25 +155,21 @@ pub fn spawn_wall_collision(
                     // 1. Adjusts the transforms to be relative to the level for free
                     // 2. the colliders will be despawned automatically when levels unload
                     for wall_rect in wall_rects {
+                        let width = (wall_rect.right as f32 - wall_rect.left as f32 + 1.)
+                            * grid_size as f32;
+                        let height = (wall_rect.top as f32 - wall_rect.bottom as f32 + 1.)
+                            * grid_size as f32;
+                        let x =
+                            (wall_rect.left + wall_rect.right + 1) as f32 * grid_size as f32 / 2.;
+                        let y =
+                            (wall_rect.bottom + wall_rect.top + 1) as f32 * grid_size as f32 / 2.;
+
                         level
                             .spawn_empty()
-                            .insert(Collider::cuboid(
-                                (wall_rect.right as f32 - wall_rect.left as f32 + 1.)
-                                    * grid_size as f32
-                                    / 2.,
-                                (wall_rect.top as f32 - wall_rect.bottom as f32 + 1.)
-                                    * grid_size as f32
-                                    / 2.,
-                            ))
-                            .insert(RigidBody::Fixed)
+                            .insert(RigidBody::Static)
+                            .insert(Collider::rectangle(width, height))
                             .insert(Friction::new(1.0))
-                            .insert(Transform::from_xyz(
-                                (wall_rect.left + wall_rect.right + 1) as f32 * grid_size as f32
-                                    / 2.,
-                                (wall_rect.bottom + wall_rect.top + 1) as f32 * grid_size as f32
-                                    / 2.,
-                                0.,
-                            ))
+                            .insert(Transform::from_xyz(x, y, 0.))
                             .insert(GlobalTransform::default());
                     }
                 });
@@ -191,7 +187,7 @@ pub struct WallPlugin;
 impl Plugin for WallPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_wall_collision)
-            .register_ldtk_int_cell::<WallBundle>(1) //dirt
-            .register_ldtk_int_cell::<WallBundle>(3); //stone
+            .register_ldtk_int_cell::<WallBundle>(1); //dirt
+            //.register_ldtk_int_cell::<WallBundle>(3); //stone
     }
 }

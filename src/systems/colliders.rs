@@ -44,7 +44,7 @@ impl From<CharacterCollider> for ColliderBundle {
         let constraints = LockedAxes::ROTATION_LOCKED;
         match value {
             CharacterCollider::Player => ColliderBundle {
-                collider: Collider::rectangle(6., 14.),
+                collider: Collider::rectangle(16., 20.),
                 rigid_body: RigidBody::Dynamic,
                 constraints,
                 max_velocity: MaxLinearSpeed(100.0),
