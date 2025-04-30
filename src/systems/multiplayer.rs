@@ -1,6 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
 use bevy_ggrs::{
-    LocalInputs, LocalPlayers,
+    AddRollbackCommandExtension, LocalInputs, LocalPlayers,
     ggrs::{self},
 };
 use bevy_matchbox::MatchboxSocket;
@@ -59,7 +59,7 @@ pub fn wait_for_payers(
             None,
         ));
         let atlas = TextureAtlas { index: 0, layout };
-        let player_c = commands.spawn(PlayerBundle {
+        let mut player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
             sprite_sheet: Sprite::from_atlas_image(texture, atlas),
             collider_bundle: ColliderBundle::from(CharacterCollider::Player),
@@ -67,6 +67,7 @@ pub fn wait_for_payers(
         });
 
         spawned_event.send(SpawnPlayerEvent(player_c.id()));
+        player_c.add_rollback();
     }
 
     // move the channel out of the socket (required because GGRS takes ownership of it)

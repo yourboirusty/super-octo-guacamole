@@ -12,6 +12,8 @@ mod config;
 mod game;
 mod systems;
 
+const TARGET_FPS: usize = 60;
+
 fn main() {
     App::new()
         .add_plugins((
@@ -45,6 +47,8 @@ fn main() {
         .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
         .init_state::<GameState>()
         .rollback_component_with_clone::<Transform>()
+        .rollback_component_with_copy::<LinearVelocity>()
+        .set_rollback_schedule_fps(TARGET_FPS)
         .add_systems(
             Startup,
             (systems::setup, systems::multiplayer::start_matchbox_socket),
