@@ -29,7 +29,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
             LdtkPlugin,
             GgrsPlugin::<MultiplayerConfig>::default(),
-            PhysicsPlugins::default(),
+            PhysicsPlugins::default().with_length_unit(12.0),
             PlayerPlugin,
             WorldInspectorPlugin::new(),
             PhysicsDebugPlugin::default(),
@@ -42,6 +42,7 @@ fn main() {
             set_clear_color: SetClearColor::No,
             ..Default::default()
         })
+        .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
         .init_state::<GameState>()
         .rollback_component_with_clone::<Transform>()
         .add_systems(

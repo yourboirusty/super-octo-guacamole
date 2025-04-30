@@ -48,9 +48,9 @@ impl From<CharacterCollider> for ColliderBundle {
                 rigid_body: RigidBody::Dynamic,
                 constraints,
                 max_velocity: MaxLinearSpeed(100.0),
-                gravity_scale: GravityScale(0.9),
+                gravity_scale: GravityScale(1.),
                 friction: Friction::new(0.),
-                density: ColliderDensity(0.7),
+                density: ColliderDensity(100.0),
                 ..Default::default()
             },
         }
