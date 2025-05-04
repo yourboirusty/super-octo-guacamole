@@ -39,6 +39,14 @@ impl From<&EntityInstance> for ColliderBundle {
     }
 }
 
+impl From<CharacterCollider> for Collider {
+    fn from(value: CharacterCollider) -> Self {
+        match value {
+            CharacterCollider::Player => Collider::rectangle(16., 20.),
+        }
+    }
+}
+
 impl From<CharacterCollider> for ColliderBundle {
     fn from(value: CharacterCollider) -> Self {
         let constraints = LockedAxes::ROTATION_LOCKED;

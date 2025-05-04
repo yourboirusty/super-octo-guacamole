@@ -1,13 +1,15 @@
+use avian2d::{math::Scalar, prelude::*};
 use bevy::{prelude::*, utils::HashMap};
 use bevy_ggrs::{
     AddRollbackCommandExtension, LocalInputs, LocalPlayers,
     ggrs::{self},
+    prelude::*,
 };
 use bevy_matchbox::MatchboxSocket;
 
 use crate::systems::{
-    colliders::{CharacterCollider, ColliderBundle},
-    player::SpawnPlayerEvent,
+    colliders::CharacterCollider,
+    player::{CharacterControllerBundle, SpawnPlayerEvent},
 };
 use crate::{
     config::*,
@@ -62,7 +64,10 @@ pub fn wait_for_payers(
         let mut player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
             sprite_sheet: Sprite::from_atlas_image(texture, atlas),
-            collider_bundle: ColliderBundle::from(CharacterCollider::Player),
+            character_controller: CharacterControllerBundle::new(Collider::from(
+                CharacterCollider::Player,
+            ))
+            .with_movement(800.0, 0.95, 55., (45. as Scalar).to_radians()),
             ..Default::default()
         });
 
@@ -114,4 +119,17 @@ pub fn read_local_inputs(
     }
 
     commands.insert_resource(LocalInputs::<MultiplayerConfig>(local_inputs));
+}
+
+pub struct MultiplayerPlugin;
+
+impl Plugin for MultiplayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<SpawnPlayerEvent>()
+            .add_systems(Startup, start_matchbox_socket)
+            .rollback_component_with_clone::<Transform>()
+            .rollback_component_with_copy::<LinearVelocity>()
+            .set_rollback_schedule_fps(TARGET_FPS)
+            .add_systems(ReadInputs, read_local_inputs);
+    }
 }

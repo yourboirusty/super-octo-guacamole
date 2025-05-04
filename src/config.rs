@@ -1,5 +1,7 @@
 use bevy_matchbox::prelude::PeerId;
 
+pub const TARGET_FPS: usize = 60;
+
 pub const INPUT_UP: u8 = 1 << 0;
 pub const INPUT_DOWN: u8 = 1 << 1;
 pub const INPUT_LEFT: u8 = 1 << 2;

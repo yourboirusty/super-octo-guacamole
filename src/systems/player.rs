@@ -14,9 +14,13 @@ use spawn::spawn_player;
 
 use crate::game::GameState;
 
-use super::colliders::ColliderBundle;
+pub enum MovementState {
+    Grounded,
+    Airborne,
+    Coyote(f32),
+}
 
-#[derive(Default, Component)]
+#[derive(Default, Component, PartialEq, Eq, Clone, Copy)]
 pub struct Player {
     pub handle: usize,
 }
@@ -25,7 +29,7 @@ pub struct Player {
 pub struct PlayerBundle {
     pub player: Player,
 
-    pub collider_bundle: ColliderBundle,
+    pub character_controller: CharacterControllerBundle,
 
     #[sprite_sheet]
     pub sprite_sheet: Sprite,
@@ -36,9 +40,7 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(GgrsSchedule, movement::move_players)
-            .add_event::<SpawnPlayerEvent>()
-            .register_ldtk_entity::<SpawnPointBundle>("SpawnPoint")
+        app.register_ldtk_entity::<SpawnPointBundle>("SpawnPoint")
             .register_ldtk_entity::<PlayerBundle>("Player")
             .add_systems(Last, spawn_player.run_if(in_state(GameState::Playing)));
     }
