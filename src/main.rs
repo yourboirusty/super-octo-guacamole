@@ -32,7 +32,6 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
             LdtkPlugin,
-            GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default().with_length_unit(12.0),
             PlayerPlugin,
             PlayerControllerPlugin,

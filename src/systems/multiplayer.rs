@@ -61,9 +61,15 @@ pub fn wait_for_payers(
             None,
         ));
         let atlas = TextureAtlas { index: 0, layout };
+        let mut sprite_sheet = Sprite::from_atlas_image(texture, atlas);
+        match player {
+            PlayerType::Local => sprite_sheet.flip_x = true,
+            _ => {}
+        }
+
         let mut player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
-            sprite_sheet: Sprite::from_atlas_image(texture, atlas),
+            sprite_sheet,
             character_controller: CharacterControllerBundle::new(Collider::from(
                 CharacterCollider::Player,
             ))
@@ -126,10 +132,11 @@ pub struct MultiplayerPlugin;
 impl Plugin for MultiplayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnPlayerEvent>()
+            .add_plugins((GgrsPlugin::<MultiplayerConfig>::default(),))
             .add_systems(Startup, start_matchbox_socket)
             .rollback_component_with_clone::<Transform>()
             .rollback_component_with_copy::<LinearVelocity>()
-            .set_rollback_schedule_fps(TARGET_FPS)
+            // .set_rollback_schedule_fps(TARGET_FPS)
             .add_systems(ReadInputs, read_local_inputs);
     }
 }
