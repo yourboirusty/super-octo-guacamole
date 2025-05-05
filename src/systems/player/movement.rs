@@ -10,30 +10,28 @@ pub fn move_players(
     mut movement_events: EventReader<MovementEvent>,
     time: Res<Time>,
 ) {
-    // Pre-process events to get the most recent move event for each player
     let mut latest_moves = std::collections::HashMap::new();
     let mut jumps = Vec::new();
     
+    // Collect the latest moves and jumps in a single pass
     for event in movement_events.read() {
-        match event.action {
-            MovementAction::Move(handle, dir) => {
-                latest_moves.insert(handle, dir);
-            }
-            MovementAction::Jump(handle) => {
-                jumps.push(handle);
+        for action in &event.actions {
+            match action {
+                MovementAction::Move(handle, dir) => {
+                    latest_moves.insert(*handle, *dir);
+                }
+                MovementAction::Jump(handle) => {
+                    jumps.push(*handle);
+                }
             }
         }
     }
     
-    // Process moves (we only care about the latest movement per player)
-    for (handle, dir) in latest_moves {
-        // Skip if direction is zero
-        if dir == Vec2::ZERO {
-            continue;
-        }
-        
-        for (mut velocity, player) in &mut players {
-            if player.handle == handle {
+    // Process both moves and jumps in a single player loop
+    for (mut velocity, player) in &mut players {
+        // Process movement if this player has a move action
+        if let Some(dir) = latest_moves.get(&player.handle) {
+            if *dir != Vec2::ZERO {
                 let move_speed = 20.;
                 let acceleration = 100.;
                 
@@ -47,10 +45,10 @@ pub fn move_players(
                 }
             }
         }
-    }
-    
-    // Process jumps
-    for handle in jumps {
-        // Jump logic could be implemented here 
+        
+        // Process jump if this player has a jump action
+        if jumps.contains(&player.handle) {
+            // Jump logic could be implemented here
+        }
     }
 }

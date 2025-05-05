@@ -13,23 +13,23 @@ pub enum MovementAction {
     Jump(usize),
 }
 
-/// Event that contains movement information
+/// Event for player actions
 #[derive(Event)]
 pub struct MovementEvent {
-    pub action: MovementAction,
+    pub handle: usize,
+    pub player: Entity,
+    pub actions: Vec<MovementAction>,
 }
 
 /// Process inputs and emit movement events
 pub fn process_inputs(
     inputs: Res<PlayerInputs<MultiplayerConfig>>,
     mut movement_writer: EventWriter<MovementEvent>,
-    players: Query<&Player>,
+    players: Query<(Entity, &Player)>,
 ) {
-    // Collect all movement events before sending them
-    let mut events = Vec::new();
-
-    for player in &players {
+    for (entity, player) in &players {
         let (input, _) = inputs[player.handle];
+        let mut actions = Vec::new();
 
         let mut direction = Vec2::ZERO;
 
@@ -46,22 +46,20 @@ pub fn process_inputs(
             direction.x -= 1.0;
         }
 
-        // Add movement event to collection
-        events.push(MovementEvent {
-            action: MovementAction::Move(player.handle, direction),
-        });
+        // Add movement action if direction is non-zero
+        actions.push(MovementAction::Move(player.handle, direction));
 
         // Check for jump/other actions
         if input & INPUT_FIRE != 0 {
-            events.push(MovementEvent {
-                action: MovementAction::Jump(player.handle),
-            });
+            actions.push(MovementAction::Jump(player.handle));
         }
-    }
 
-    // Send all events at once
-    for event in events {
-        movement_writer.send(event);
+        // Only send event if there are actions
+        movement_writer.send(MovementEvent {
+            handle: player.handle,
+            player: entity,
+            actions,
+        });
     }
 }
 
@@ -71,7 +69,6 @@ pub struct ControllerPlugin;
 impl Plugin for ControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<MovementEvent>()
-            .add_systems(GgrsSchedule, (process_inputs));
+            .add_systems(GgrsSchedule, process_inputs);
     }
 }
-

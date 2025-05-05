@@ -1,15 +1,12 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use bevy_ggrs::GgrsApp;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use config::LEVEL_IIDS;
 use game::GameState;
 use systems::{
-    check_asset_loading,
-    controller::ControllerPlugin,
-    multiplayer::MultiplayerPlugin,
-    player::{PlayerPlugin, spawn::spawn_player},
+    check_asset_loading, controller::ControllerPlugin, multiplayer::MultiplayerPlugin,
+    player::PlayerPlugin,
 };
 
 mod components;
