@@ -1,18 +1,38 @@
+use avian2d::prelude::LinearVelocity;
 use bevy::{prelude::*, utils::HashMap};
-use bevy_ggrs::{
-    AddRollbackCommandExtension, LocalInputs, LocalPlayers,
-    ggrs::{self},
-};
+use bevy_ggrs::{LocalInputs, LocalPlayers, prelude::*};
 use bevy_matchbox::MatchboxSocket;
 
-use crate::systems::{
-    colliders::{CharacterCollider, ColliderBundle},
-    player::SpawnPlayerEvent,
-};
 use crate::{
     config::*,
     systems::player::{Player, PlayerBundle},
 };
+use crate::{
+    game::GameState,
+    systems::{
+        colliders::{CharacterCollider, ColliderBundle},
+        player::SpawnPlayerEvent,
+    },
+};
+
+pub struct MultiplayerPlugin;
+
+const TARGET_FPS: usize = 60;
+
+impl Plugin for MultiplayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
+            .rollback_component_with_clone::<Transform>()
+            .rollback_component_with_copy::<LinearVelocity>()
+            .set_rollback_schedule_fps(TARGET_FPS)
+            .add_systems(Startup, start_matchbox_socket)
+            .add_systems(ReadInputs, read_local_inputs)
+            .add_systems(
+                Update,
+                (wait_for_payers.run_if(in_state(GameState::Playing)),),
+            );
+    }
+}
 
 pub fn start_matchbox_socket(mut commands: Commands) {
     // wasm_test -> scope
@@ -41,14 +61,18 @@ pub fn wait_for_payers(
     info!("All peers have joined, starting game");
 
     // create a GGRS P2P session
-    let mut session_builder = ggrs::SessionBuilder::<MultiplayerConfig>::new()
+    let mut session_builder = SessionBuilder::<MultiplayerConfig>::new()
         .with_num_players(num_players)
         .with_input_delay(2);
+
+    // Add local player handles - for simplicity, assume player 0 is local
+    let local_players = vec![0];
 
     for (i, player) in players.into_iter().enumerate() {
         session_builder = session_builder
             .add_player(player, i)
             .expect("failed to add player");
+        
         info!("Created player");
         let texture = asset_server.load("atlas/Player.png");
         let layout = texture_atlases.add(TextureAtlasLayout::from_grid(
@@ -69,6 +93,9 @@ pub fn wait_for_payers(
         spawned_event.send(SpawnPlayerEvent(player_c.id()));
         player_c.add_rollback();
     }
+
+    // Add resource for local players
+    commands.insert_resource(LocalPlayers(local_players));
 
     // move the channel out of the socket (required because GGRS takes ownership of it)
     let channel = socket.take_channel(0).unwrap();

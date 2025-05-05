@@ -1,18 +1,21 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use bevy_ggrs::{GgrsApp, GgrsPlugin, ReadInputs};
+use bevy_ggrs::GgrsApp;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use config::{LEVEL_IIDS, MultiplayerConfig};
+use config::LEVEL_IIDS;
 use game::GameState;
-use systems::{check_asset_loading, player::PlayerPlugin};
+use systems::{
+    check_asset_loading,
+    controller::ControllerPlugin,
+    multiplayer::MultiplayerPlugin,
+    player::{PlayerPlugin, spawn::spawn_player},
+};
 
 mod components;
 mod config;
 mod game;
 mod systems;
-
-const TARGET_FPS: usize = 60;
 
 fn main() {
     App::new()
@@ -30,9 +33,10 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
             LdtkPlugin,
-            GgrsPlugin::<MultiplayerConfig>::default(),
             PhysicsPlugins::default().with_length_unit(12.0),
             PlayerPlugin,
+            MultiplayerPlugin,
+            ControllerPlugin,
             WorldInspectorPlugin::new(),
             PhysicsDebugPlugin::default(),
             systems::walls::WallPlugin,
@@ -46,22 +50,11 @@ fn main() {
         })
         .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
         .init_state::<GameState>()
-        .rollback_component_with_clone::<Transform>()
-        .rollback_component_with_copy::<LinearVelocity>()
-        .set_rollback_schedule_fps(TARGET_FPS)
-        .add_systems(
-            Startup,
-            (systems::setup, systems::multiplayer::start_matchbox_socket),
-        )
+        .add_systems(Startup, systems::setup)
         .add_systems(
             Update,
-            check_asset_loading.run_if(in_state(GameState::Loading)),
+            (check_asset_loading.run_if(in_state(GameState::Loading)),),
         )
-        .add_systems(
-            Update,
-            (systems::multiplayer::wait_for_payers.run_if(in_state(GameState::Playing)),),
-        )
-        .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
         .insert_resource(LevelSelection::Iid(LevelIid::new(LEVEL_IIDS[0])))
         .run();
 }
