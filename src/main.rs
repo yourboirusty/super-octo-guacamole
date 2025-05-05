@@ -53,7 +53,6 @@ fn main() {
             Startup,
             (systems::setup, systems::multiplayer::start_matchbox_socket),
         )
-        .add_systems(Update, (systems::player::camera_fit_inside_current_level,))
         .add_systems(
             Update,
             check_asset_loading.run_if(in_state(GameState::Loading)),
