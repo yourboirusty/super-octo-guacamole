@@ -1,6 +1,6 @@
 mod camera;
 mod ground_detection;
-mod movement;
+pub mod movement;
 pub mod spawn;
 
 pub use spawn::*;
@@ -10,7 +10,7 @@ use bevy_ecs_ldtk::prelude::*;
 
 use crate::game::GameState;
 
-use super::colliders::ColliderBundle;
+use super::{colliders::ColliderBundle, controller::CharacterControllerBundle};
 
 #[derive(Default, Component)]
 pub struct Player {
@@ -21,7 +21,7 @@ pub struct Player {
 pub struct PlayerBundle {
     pub player: Player,
 
-    pub collider_bundle: ColliderBundle,
+    pub character_controller: CharacterControllerBundle,
 
     #[sprite_sheet]
     pub sprite_sheet: Sprite,

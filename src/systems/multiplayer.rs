@@ -1,38 +1,27 @@
-use avian2d::prelude::LinearVelocity;
+use avian2d::{math::Scalar, prelude::*};
 use bevy::{prelude::*, utils::HashMap};
-use bevy_ggrs::{LocalInputs, LocalPlayers, prelude::*};
+use bevy_ggrs::{
+    AddRollbackCommandExtension, LocalInputs, LocalPlayers,
+    ggrs::{self},
+    prelude::*,
+};
 use bevy_matchbox::MatchboxSocket;
 
 use crate::{
     config::*,
-    systems::player::{Player, PlayerBundle},
+    systems::{
+        controller::CharacterControllerBundle,
+        player::{Player, PlayerBundle},
+    },
 };
 use crate::{
     game::GameState,
-    systems::{
-        colliders::{CharacterCollider, ColliderBundle},
-        player::SpawnPlayerEvent,
-    },
+    systems::{colliders::CharacterCollider, player::SpawnPlayerEvent},
 };
 
-pub struct MultiplayerPlugin;
+use super::controller::Grounded;
 
 const TARGET_FPS: usize = 60;
-
-impl Plugin for MultiplayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
-            .rollback_component_with_clone::<Transform>()
-            .rollback_component_with_copy::<LinearVelocity>()
-            .set_rollback_schedule_fps(TARGET_FPS)
-            .add_systems(Startup, start_matchbox_socket)
-            .add_systems(ReadInputs, read_local_inputs)
-            .add_systems(
-                Update,
-                (wait_for_payers.run_if(in_state(GameState::Playing)),),
-            );
-    }
-}
 
 pub fn start_matchbox_socket(mut commands: Commands) {
     // wasm_test -> scope
@@ -46,7 +35,6 @@ pub fn wait_for_payers(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket>,
     mut spawned_event: EventWriter<SpawnPlayerEvent>,
-    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
     if socket.get_channel(0).is_err() {
@@ -61,32 +49,40 @@ pub fn wait_for_payers(
     info!("All peers have joined, starting game");
 
     // create a GGRS P2P session
-    let mut session_builder = SessionBuilder::<MultiplayerConfig>::new()
+    let mut session_builder = ggrs::SessionBuilder::<MultiplayerConfig>::new()
         .with_num_players(num_players)
-        .with_input_delay(2);
+        .with_input_delay(5)
+        .with_fps(60)
+        .unwrap()
+        .with_max_prediction_window(2)
+        .with_sparse_saving_mode(false)
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 })
+        .with_input_delay(4);
 
     // Add local player handles - for simplicity, assume player 0 is local
-    let local_players = vec![0];
+    let mut local_player_handles = Vec::new();
 
     for (i, player) in players.into_iter().enumerate() {
         session_builder = session_builder
             .add_player(player, i)
             .expect("failed to add player");
-        
         info!("Created player");
-        let texture = asset_server.load("atlas/Player.png");
-        let layout = texture_atlases.add(TextureAtlasLayout::from_grid(
-            UVec2::new(32, 32),
-            7,
-            6,
-            None,
-            None,
-        ));
-        let atlas = TextureAtlas { index: 0, layout };
+        let texture = match player {
+            PlayerType::Local => {
+                local_player_handles.push(i);
+                asset_server.load("atlas/kornel.png")
+            }
+            _ => asset_server.load("atlas/wera.png"),
+        };
+        let sprite_sheet = Sprite::from_image(texture);
+
         let mut player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
-            sprite_sheet: Sprite::from_atlas_image(texture, atlas),
-            collider_bundle: ColliderBundle::from(CharacterCollider::Player),
+            sprite_sheet,
+            character_controller: CharacterControllerBundle::new(Collider::from(
+                CharacterCollider::Player,
+            ))
+            .with_movement(7.0, 0.95, 55., (45. as Scalar).to_radians(), 100.0),
             ..Default::default()
         });
 
@@ -95,8 +91,7 @@ pub fn wait_for_payers(
     }
 
     // Add resource for local players
-    commands.insert_resource(LocalPlayers(local_players));
-
+    commands.insert_resource(LocalPlayers(local_player_handles));
     // move the channel out of the socket (required because GGRS takes ownership of it)
     let channel = socket.take_channel(0).unwrap();
 
@@ -141,4 +136,45 @@ pub fn read_local_inputs(
     }
 
     commands.insert_resource(LocalInputs::<MultiplayerConfig>(local_inputs));
+}
+
+pub struct MultiplayerPlugin;
+impl Plugin for MultiplayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
+            .rollback_component_with_clone::<Transform>()
+            .rollback_component_with_clone::<GlobalTransform>()
+            .rollback_component_with_clone::<LinearVelocity>()
+            .rollback_component_with_clone::<AngularVelocity>()
+            .rollback_component_with_clone::<Position>()
+            .rollback_component_with_clone::<Rotation>()
+            .rollback_resource_with_clone::<Time<Physics>>()
+            .rollback_component_with_clone::<Grounded>()
+            .checksum_component::<Position>(|position| {
+                let mut bytes: Vec<u8> = Vec::new();
+                bytes.extend(position.x.to_ne_bytes());
+                bytes.extend(position.y.to_ne_bytes());
+                fletcher16(&bytes) as u64
+            })
+            // .rollback_component_with_clone::<Collisions>()
+            .set_rollback_schedule_fps(TARGET_FPS)
+            .add_systems(Startup, start_matchbox_socket)
+            .add_systems(ReadInputs, read_local_inputs)
+            .add_systems(
+                Update,
+                (wait_for_payers.run_if(in_state(GameState::Playing)),),
+            );
+    }
+}
+
+pub fn fletcher16(data: &[u8]) -> u16 {
+    let mut sum1: u16 = 0;
+    let mut sum2: u16 = 0;
+
+    for byte in data {
+        sum1 = (sum1 + *byte as u16) % 255;
+        sum2 = (sum2 + sum1) % 255;
+    }
+
+    (sum2 << 8) | sum1
 }
