@@ -55,7 +55,7 @@ pub fn wait_for_payers(
         .with_fps(60)
         .unwrap()
         .with_max_prediction_window(2)
-        .with_sparse_saving_mode(false)
+        // .with_sparse_saving_mode(false)
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 })
         .with_input_delay(4);
 
@@ -143,12 +143,17 @@ impl Plugin for MultiplayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
             .rollback_component_with_clone::<Transform>()
+            .rollback_component_with_clone::<Rotation>()
             .rollback_component_with_clone::<GlobalTransform>()
             .rollback_component_with_clone::<LinearVelocity>()
             .rollback_component_with_clone::<AngularVelocity>()
             .rollback_component_with_clone::<Position>()
+            .rollback_component_with_clone::<Sleeping>()
+            .rollback_component_with_clone::<TimeSleeping>()
+            .rollback_component_with_clone::<CollidingEntities>()
             .rollback_component_with_clone::<Rotation>()
             .rollback_resource_with_clone::<Time<Physics>>()
+            .rollback_resource_with_clone::<Collisions>()
             .rollback_component_with_clone::<Grounded>()
             .checksum_component::<Position>(|position| {
                 let mut bytes: Vec<u8> = Vec::new();
