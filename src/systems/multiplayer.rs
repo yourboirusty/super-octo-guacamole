@@ -55,7 +55,7 @@ pub fn wait_for_payers(
         .with_fps(60)
         .unwrap()
         .with_max_prediction_window(2)
-        // .with_sparse_saving_mode(false)
+        .with_sparse_saving_mode(false)
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 })
         .with_input_delay(4);
 
@@ -82,7 +82,7 @@ pub fn wait_for_payers(
             character_controller: CharacterControllerBundle::new(Collider::from(
                 CharacterCollider::Player,
             ))
-            .with_movement(7.0, 0.95, 55., (45. as Scalar).to_radians(), 100.0),
+            .with_movement(7.0, 0.95, 30., (45. as Scalar).to_radians(), 100.0),
             ..Default::default()
         });
 
@@ -143,7 +143,7 @@ impl Plugin for MultiplayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
             .rollback_component_with_clone::<Transform>()
-            .rollback_component_with_clone::<Rotation>()
+            // .rollback_component_with_clone::<Rotation>()
             .rollback_component_with_clone::<GlobalTransform>()
             .rollback_component_with_clone::<LinearVelocity>()
             .rollback_component_with_clone::<AngularVelocity>()

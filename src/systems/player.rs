@@ -3,6 +3,7 @@ mod ground_detection;
 pub mod movement;
 pub mod spawn;
 
+use avian2d::prelude::SleepingDisabled;
 pub use spawn::*;
 
 use bevy::prelude::*;
@@ -22,6 +23,7 @@ pub struct PlayerBundle {
     pub player: Player,
 
     pub character_controller: CharacterControllerBundle,
+    pub no_sleep: SleepingDisabled,
 
     #[sprite_sheet]
     pub sprite_sheet: Sprite,
