@@ -3,8 +3,12 @@ name = "wasm-multi"
 version = "0.1.0"
 edition = "2024"
 
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+
 [dependencies]
-avian2d = "0.2.1"
+avian2d = {version = "0.2.1", default-features = false, features = ["2d", "f32", "parry-f32", "debug-plugin", "enhanced-determinism", "serialize"]}
 
 bevy = { version = "0.15.3", features = ["dynamic_linking", "webgl2"] }
 bevy-inspector-egui = "0.30.0"

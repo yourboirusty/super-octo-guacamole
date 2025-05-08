@@ -1,68 +1,82 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use bevy_ggrs::{GgrsApp, GgrsPlugin, ReadInputs};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use config::{LEVEL_IIDS, MultiplayerConfig};
+use config::LEVEL_IIDS;
 use game::GameState;
-use systems::{check_asset_loading, player::PlayerPlugin};
+use systems::{
+    check_asset_loading,
+    controller::{ControllerPlugin, MovementEvent, process_inputs},
+    multiplayer::MultiplayerPlugin,
+    player::{
+        PlayerPlugin,
+        movement::{apply_movement_damping, move_players, update_grounded},
+    },
+};
 
 mod components;
 mod config;
 mod game;
 mod systems;
 
-const TARGET_FPS: usize = 60;
-
 fn main() {
-    App::new()
-        .add_plugins((
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        // Fill browser window
-                        fit_canvas_to_parent: true,
-                        // Allow for browser shortcuts
-                        prevent_default_event_handling: false,
-                        ..default()
-                    }),
+    let mut app = App::new();
+    app.add_plugins((
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    // Fill browser window
+                    fit_canvas_to_parent: true,
+                    // Allow for browser shortcuts
+                    prevent_default_event_handling: false,
                     ..default()
-                })
-                .set(ImagePlugin::default_nearest()),
-            LdtkPlugin,
-            GgrsPlugin::<MultiplayerConfig>::default(),
-            PhysicsPlugins::default().with_length_unit(12.0),
-            PlayerPlugin,
-            WorldInspectorPlugin::new(),
-            PhysicsDebugPlugin::default(),
-            systems::walls::WallPlugin,
-        ))
-        .insert_resource(LdtkSettings {
-            level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {
-                load_level_neighbors: false,
-            },
-            set_clear_color: SetClearColor::No,
-            ..Default::default()
-        })
-        .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
-        .init_state::<GameState>()
-        .rollback_component_with_clone::<Transform>()
-        .rollback_component_with_copy::<LinearVelocity>()
-        .set_rollback_schedule_fps(TARGET_FPS)
-        .add_systems(
-            Startup,
-            (systems::setup, systems::multiplayer::start_matchbox_socket),
+                }),
+                ..default()
+            })
+            .set(ImagePlugin::default_nearest()),
+        LdtkPlugin,
+        PhysicsPlugins::new(bevy_ggrs::GgrsSchedule).with_length_unit(12.0),
+        PlayerPlugin,
+        MultiplayerPlugin,
+        ControllerPlugin,
+        WorldInspectorPlugin::new(),
+        PhysicsDebugPlugin::default(),
+        systems::walls::WallPlugin,
+    ))
+    .insert_resource(LdtkSettings {
+        level_spawn_behavior: LevelSpawnBehavior::UseWorldTranslation {
+            load_level_neighbors: false,
+        },
+        set_clear_color: SetClearColor::No,
+        ..Default::default()
+    })
+    .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
+    .init_state::<GameState>()
+    .add_systems(Startup, systems::setup)
+    .add_systems(
+        Update,
+        (check_asset_loading.run_if(in_state(GameState::Loading)),),
+    )
+    .insert_resource(LevelSelection::Iid(LevelIid::new(LEVEL_IIDS[0])));
+
+    app.get_schedule_mut(bevy_ggrs::GgrsSchedule)
+        .unwrap()
+        .set_build_settings(bevy::ecs::schedule::ScheduleBuildSettings::default());
+
+    app.add_event::<MovementEvent>();
+
+    app.add_systems(
+        bevy_ggrs::GgrsSchedule,
+        (
+            process_inputs,
+            move_players,
+            apply_movement_damping,
+            update_grounded,
+            apply_deferred,
         )
-        .add_systems(Update, (systems::player::camera_fit_inside_current_level,))
-        .add_systems(
-            Update,
-            check_asset_loading.run_if(in_state(GameState::Loading)),
-        )
-        .add_systems(
-            Update,
-            (systems::multiplayer::wait_for_payers.run_if(in_state(GameState::Playing)),),
-        )
-        .add_systems(ReadInputs, systems::multiplayer::read_local_inputs)
-        .insert_resource(LevelSelection::Iid(LevelIid::new(LEVEL_IIDS[0])))
-        .run();
+            .chain()
+            .before(PhysicsSet::Prepare),
+    );
+
+    app.run();
 }
