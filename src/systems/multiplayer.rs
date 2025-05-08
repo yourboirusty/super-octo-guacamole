@@ -82,7 +82,7 @@ pub fn wait_for_payers(
             character_controller: CharacterControllerBundle::new(Collider::from(
                 CharacterCollider::Player,
             ))
-            .with_movement(7.0, 0.95, 30., (45. as Scalar).to_radians(), 100.0),
+            .with_movement(7.0, 0.95, 50., (45. as Scalar).to_radians(), 100.0),
             ..Default::default()
         });
 
@@ -149,6 +149,7 @@ impl Plugin for MultiplayerPlugin {
             .rollback_component_with_clone::<AngularVelocity>()
             .rollback_component_with_clone::<Position>()
             .rollback_component_with_clone::<Sleeping>()
+            .rollback_component_with_clone::<ShapeHits>()
             .rollback_component_with_clone::<TimeSleeping>()
             .rollback_component_with_clone::<CollidingEntities>()
             .rollback_component_with_clone::<Rotation>()

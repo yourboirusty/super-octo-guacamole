@@ -50,6 +50,7 @@ pub fn move_players(
     for (mut velocity, player, acceleration, jump_power, is_grounded) in &mut players {
         let mut horizontal = velocity.x;
         let mut vertical = velocity.y;
+
         // Process movement if this player has a move action
         if let Some(dir) = latest_moves.get(&player.handle) {
             if *dir != Vec2::ZERO {
@@ -66,13 +67,12 @@ pub fn move_players(
             }
         }
 
-        // Process jump if this player has a jump action
         if jumps.contains(&player.handle) {
             if is_grounded {
                 vertical = jump_power.0 * 60. * time.delta_secs();
             }
-            // Jump logic could be implemented here
         }
+
         // For some reason, if you wanted to zero out a velocity and it happens
         // that the two players are in contact, it will cause a desync in Avian
         let new_vel_x = if horizontal != 0. {
