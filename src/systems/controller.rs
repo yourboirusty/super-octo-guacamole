@@ -1,8 +1,8 @@
 use avian2d::math::{PI, Scalar, Vector};
-use avian2d::prelude::{Collider, LockedAxes, RigidBody, ShapeCaster};
+use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy_ggrs::PlayerInputs;
 use bevy_ggrs::ggrs::InputStatus;
-use bevy_ggrs::{GgrsSchedule, PlayerInputs};
 
 use crate::config::*;
 use crate::systems::player::Player;
@@ -96,7 +96,7 @@ impl CharacterControllerBundle {
 
         Self {
             controller: CharacterController,
-            body: RigidBody::Dynamic,
+            body: RigidBody::Kinematic,
             collider,
             ground_caster: ShapeCaster::new(caster_shape, Vector::ZERO, 0.0, Dir2::NEG_Y)
                 .with_max_distance(5.0),

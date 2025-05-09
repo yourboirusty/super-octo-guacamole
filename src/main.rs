@@ -10,7 +10,10 @@ use systems::{
     multiplayer::MultiplayerPlugin,
     player::{
         PlayerPlugin,
-        movement::{apply_movement_damping, move_players, update_grounded},
+        movement::{
+            apply_gravity, apply_movement_damping, kinematic_controller_collisions, move_players,
+            update_grounded,
+        },
     },
 };
 
@@ -72,11 +75,14 @@ fn main() {
             move_players,
             apply_movement_damping,
             update_grounded,
+            apply_gravity,
             apply_deferred,
         )
             .chain()
             .before(PhysicsSet::Prepare),
     );
+
+    app.add_systems(PostProcessCollisions, kinematic_controller_collisions);
 
     app.run();
 }

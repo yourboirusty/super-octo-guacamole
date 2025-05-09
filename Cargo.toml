@@ -10,10 +10,16 @@ codegen-units = 1
 [dependencies]
 avian2d = {version = "0.2.1", default-features = false, features = ["2d", "f32", "parry-f32", "debug-plugin", "enhanced-determinism", "serialize"]}
 
-bevy = { version = "0.15.3", features = ["dynamic_linking", "webgl2"] }
+bevy = { version = "0.15.3", features = ["webgl2"] }
 bevy-inspector-egui = "0.30.0"
 bevy_ecs_ldtk = {version = "0.11.0", features = [ "atlas" ]}
 
 bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }
 bevy_matchbox = { version = "0.11", features = ["ggrs"] }
 
+[features]
+default = ["dev"]
+dev = [    
+  "bevy/dynamic_linking",
+    "bevy/bevy_dev_tools",
+]
