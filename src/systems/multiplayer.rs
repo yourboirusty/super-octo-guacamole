@@ -79,10 +79,7 @@ pub fn wait_for_payers(
         let mut player_c = commands.spawn(PlayerBundle {
             player: Player { handle: i },
             sprite_sheet,
-            character_controller: CharacterControllerBundle::new(Collider::from(
-                CharacterCollider::Player,
-            ))
-            .with_movement(7.0, 0.95, 50., (45. as Scalar).to_radians(), 100.0),
+            character_controller: CharacterControllerBundle::from(CharacterCollider::Player),
             ..Default::default()
         });
 

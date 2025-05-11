@@ -3,9 +3,14 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ggrs::PlayerInputs;
 use bevy_ggrs::ggrs::InputStatus;
+use collision_masks::LayerEnum;
 
 use crate::config::*;
 use crate::systems::player::Player;
+
+use super::colliders::CharacterCollider;
+
+pub mod collision_masks;
 
 /// Possible movement actions
 #[derive(Debug, Clone, Copy)]
@@ -83,23 +88,55 @@ pub struct CharacterControllerBundle {
     collider: Collider,
     body: RigidBody,
     controller: CharacterController,
+    collision_mask: CollisionLayers,
     movement: MovementBundle,
     ground_caster: ShapeCaster,
     locked_axes: LockedAxes,
 }
 
+impl From<CharacterCollider> for CharacterControllerBundle {
+    fn from(value: CharacterCollider) -> Self {
+        match value {
+            CharacterCollider::Player => {
+                let collision_mask = CollisionLayers::from(value);
+                let collider = Collider::from(value);
+
+                let accel = 7.0;
+                let damping = 0.9;
+                let jump_impulse = 50.;
+                let slope_angle = (45. as Scalar).to_radians();
+                let jump_height = 100.;
+                Self::new(collider, LayerEnum::Wall, collision_mask).with_movement(
+                    accel,
+                    damping,
+                    jump_impulse,
+                    slope_angle,
+                    jump_height,
+                )
+            }
+        }
+    }
+}
+
 impl CharacterControllerBundle {
-    pub fn new(collider: Collider) -> Self {
+    pub fn new(
+        collider: Collider,
+        collision_layer: LayerEnum,
+        collision_mask: CollisionLayers,
+    ) -> Self {
         // Create shape caster as a slightly smaller version of collider
         let mut caster_shape = collider.clone();
-        caster_shape.set_scale(Vector::ONE * 0.99, 10);
+        let query_filter = SpatialQueryFilter::from_mask(collision_layer.to_bits());
+        caster_shape.set_scale(Vector::ONE * 0.99, 1);
 
         Self {
             controller: CharacterController,
             body: RigidBody::Kinematic,
             collider,
+            collision_mask,
             ground_caster: ShapeCaster::new(caster_shape, Vector::ZERO, 0.0, Dir2::NEG_Y)
-                .with_max_distance(5.0),
+                .with_max_distance(1.0)
+                .with_query_filter(query_filter),
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::default(),
         }
