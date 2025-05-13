@@ -10,6 +10,7 @@ use systems::{
     multiplayer::MultiplayerPlugin,
     player::{
         PlayerPlugin,
+        camera::camera_follow_local_players,
         movement::{
             apply_gravity, apply_movement_damping, kinematic_controller_collisions, move_players,
             update_grounded,
@@ -67,6 +68,11 @@ fn main() {
         .set_build_settings(bevy::ecs::schedule::ScheduleBuildSettings::default());
 
     app.add_event::<MovementEvent>();
+
+    app.add_systems(
+        Update,
+        camera_follow_local_players.run_if(in_state(GameState::Playing)),
+    );
 
     app.add_systems(
         bevy_ggrs::GgrsSchedule,

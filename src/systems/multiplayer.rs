@@ -23,7 +23,7 @@ use super::controller::Grounded;
 
 const TARGET_FPS: usize = 60;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component)]
 pub struct Local;
 
 pub fn start_matchbox_socket(mut commands: Commands) {
@@ -84,6 +84,9 @@ pub fn wait_for_payers(
             character_controller: CharacterControllerBundle::from(CharacterCollider::Player),
             ..Default::default()
         });
+        if player == PlayerType::Local {
+            player_c.insert(Local);
+        }
 
         spawned_event.send(SpawnPlayerEvent(player_c.id()));
         player_c.add_rollback();
