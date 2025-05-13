@@ -23,6 +23,9 @@ use super::controller::Grounded;
 
 const TARGET_FPS: usize = 60;
 
+#[derive(Component, Clone, Copy)]
+pub struct Local;
+
 pub fn start_matchbox_socket(mut commands: Commands) {
     // wasm_test -> scope
     // next=2 -> make room connect pairs as they connect
@@ -52,12 +55,11 @@ pub fn wait_for_payers(
     let mut session_builder = ggrs::SessionBuilder::<MultiplayerConfig>::new()
         .with_num_players(num_players)
         .with_input_delay(5)
-        .with_fps(60)
+        .with_fps(TARGET_FPS)
         .unwrap()
-        .with_max_prediction_window(2)
+        .with_max_prediction_window(8)
         .with_sparse_saving_mode(false)
-        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 })
-        .with_input_delay(4);
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 });
 
     // Add local player handles - for simplicity, assume player 0 is local
     let mut local_player_handles = Vec::new();
@@ -143,16 +145,18 @@ impl Plugin for MultiplayerPlugin {
             // .rollback_component_with_clone::<Rotation>()
             .rollback_component_with_clone::<GlobalTransform>()
             .rollback_component_with_clone::<LinearVelocity>()
-            .rollback_component_with_clone::<AngularVelocity>()
+            // .rollback_component_with_clone::<AngularVelocity>()
             .rollback_component_with_clone::<Position>()
-            .rollback_component_with_clone::<Sleeping>()
+            // .rollback_component_with_clone::<Sleeping>()
             .rollback_component_with_clone::<ShapeHits>()
-            .rollback_component_with_clone::<TimeSleeping>()
+            .rollback_component_with_clone::<Grounded>()
+            // .rollback_component_with_clone::<TimeSleeping>()
             .rollback_component_with_clone::<CollidingEntities>()
             .rollback_component_with_clone::<Rotation>()
             .rollback_resource_with_clone::<Time<Physics>>()
+            .rollback_resource_with_clone::<Time>()
             .rollback_resource_with_clone::<Collisions>()
-            .rollback_component_with_clone::<Grounded>()
+            // .rollback_component_with_clone::<Grounded>()
             .checksum_component::<Position>(|position| {
                 let mut bytes: Vec<u8> = Vec::new();
                 bytes.extend(position.x.to_ne_bytes());

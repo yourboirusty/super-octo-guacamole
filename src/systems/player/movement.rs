@@ -73,23 +73,25 @@ pub fn move_players(
             }
         }
 
-        // For some reason, if you wanted to zero out a velocity and it happens
-        // that the two players are in contact, it will cause a desync in Avian
-        let new_vel_x = if horizontal != 0. {
-            horizontal
-        } else {
-            velocity.x
-        };
+        //// For some reason, if you wanted to zero out a velocity and it happens
+        //// that the two players are in contact, it will cause a desync in Avian
+        //let new_vel_x = if horizontal != 0. {
+        //    horizontal
+        //} else {
+        //    velocity.x
+        //};
+        //
+        //let new_vel_y = if vertical != 0. { vertical } else { velocity.y };
 
-        let new_vel_y = if vertical != 0. { vertical } else { velocity.y };
-
-        velocity.x = new_vel_x;
-        velocity.y = new_vel_y;
+        velocity.x = horizontal;
+        velocity.y = vertical;
     }
 }
 
 /// Slows down movement in the X direction.
-pub fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity)>) {
+pub fn apply_movement_damping(
+    mut query: Query<(&MovementDampingFactor, &mut LinearVelocity), With<Rollback>>,
+) {
     for (damping_factor, mut linear_velocity) in &mut query {
         // We could use `LinearDamping`, but we don't want to dampen movement along the Y axis
         linear_velocity.x *= damping_factor.0;
@@ -97,7 +99,10 @@ pub fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut Lin
 }
 
 pub fn apply_gravity(
-    mut query: Query<&mut LinearVelocity, (With<CharacterController>, Without<Grounded>)>,
+    mut query: Query<
+        &mut LinearVelocity,
+        (With<CharacterController>, Without<Grounded>, With<Rollback>),
+    >,
     time: Res<Time<Physics>>,
     gravity: Res<Gravity>,
 ) {
@@ -114,7 +119,7 @@ pub fn update_grounded(
     mut commands: Commands,
     mut query: Query<
         (Entity, &ShapeHits, &Rotation, Option<&MaxSlopeAngle>),
-        With<CharacterController>,
+        (With<CharacterController>, With<Rollback>),
     >,
 ) {
     for (entity, hits, rotation, max_slope_angle) in &mut query {
@@ -155,9 +160,9 @@ pub fn kinematic_controller_collisions(
             &mut LinearVelocity,
             Option<&MaxSlopeAngle>,
         ),
-        (With<RigidBody>, With<CharacterController>),
+        (With<RigidBody>, With<CharacterController>, With<Rollback>),
     >,
-    time: Res<Time>,
+    time: Res<Time<Physics>>,
 ) {
     // Iterate through collisions and move the kinematic body to resolve penetration
     for contacts in collisions.iter() {

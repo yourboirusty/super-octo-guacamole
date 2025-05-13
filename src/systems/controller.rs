@@ -1,8 +1,8 @@
 use avian2d::math::{PI, Scalar, Vector};
 use avian2d::prelude::*;
 use bevy::prelude::*;
-use bevy_ggrs::PlayerInputs;
 use bevy_ggrs::ggrs::InputStatus;
+use bevy_ggrs::{PlayerInputs, Rollback};
 use collision_masks::LayerEnum;
 
 use crate::config::*;
@@ -164,7 +164,7 @@ impl CharacterControllerBundle {
 pub fn process_inputs(
     inputs: Res<PlayerInputs<MultiplayerConfig>>,
     mut movement_writer: EventWriter<MovementEvent>,
-    players: Query<(Entity, &Player)>,
+    players: Query<(Entity, &Player), With<Rollback>>,
 ) {
     for (entity, player) in &players {
         let (input, input_status) = inputs[player.handle];

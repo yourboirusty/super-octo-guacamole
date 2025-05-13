@@ -73,8 +73,8 @@ fn main() {
         (
             process_inputs,
             move_players,
-            apply_movement_damping,
             update_grounded,
+            apply_movement_damping,
             apply_gravity,
             apply_deferred,
         )
@@ -82,7 +82,10 @@ fn main() {
             .before(PhysicsSet::Prepare),
     );
 
-    app.add_systems(PostProcessCollisions, kinematic_controller_collisions);
+    app.add_systems(
+        bevy_ggrs::GgrsSchedule,
+        (kinematic_controller_collisions, apply_deferred).after(PhysicsSet::StepSimulation),
+    );
 
     app.run();
 }

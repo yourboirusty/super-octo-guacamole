@@ -32,7 +32,7 @@ pub enum CharacterCollider {
 impl From<CharacterCollider> for Collider {
     fn from(value: CharacterCollider) -> Self {
         match value {
-            CharacterCollider::Player => Collider::capsule(5.0, 5.5),
+            CharacterCollider::Player => Collider::capsule(4.0, 5.),
         }
     }
 }
