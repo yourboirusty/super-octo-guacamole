@@ -1,4 +1,4 @@
-use avian2d::{math::Scalar, prelude::*};
+use avian2d::prelude::*;
 use bevy::{prelude::*, utils::HashMap};
 use bevy_ggrs::{
     AddRollbackCommandExtension, LocalInputs, LocalPlayers,
@@ -54,10 +54,11 @@ pub fn wait_for_payers(
     // create a GGRS P2P session
     let mut session_builder = ggrs::SessionBuilder::<MultiplayerConfig>::new()
         .with_num_players(num_players)
-        .with_input_delay(5)
+        .with_input_delay(1)
         .with_fps(TARGET_FPS)
         .unwrap()
         .with_max_prediction_window(8)
+        // If Saving game state >>> advancing game state
         .with_sparse_saving_mode(false)
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 });
 
@@ -144,29 +145,41 @@ pub struct MultiplayerPlugin;
 impl Plugin for MultiplayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GgrsPlugin::<MultiplayerConfig>::default())
+            // Location
             .rollback_component_with_clone::<Transform>()
-            // .rollback_component_with_clone::<Rotation>()
             .rollback_component_with_clone::<GlobalTransform>()
+            // Physics
             .rollback_component_with_clone::<LinearVelocity>()
-            // .rollback_component_with_clone::<AngularVelocity>()
             .rollback_component_with_clone::<Position>()
-            // .rollback_component_with_clone::<Sleeping>()
             .rollback_component_with_clone::<ShapeHits>()
-            .rollback_component_with_clone::<Grounded>()
-            // .rollback_component_with_clone::<TimeSleeping>()
             .rollback_component_with_clone::<CollidingEntities>()
             .rollback_component_with_clone::<Rotation>()
+            .rollback_resource_with_clone::<Collisions>()
+            //Time
             .rollback_resource_with_clone::<Time<Physics>>()
             .rollback_resource_with_clone::<Time>()
-            .rollback_resource_with_clone::<Collisions>()
-            // .rollback_component_with_clone::<Grounded>()
+            .rollback_component_with_clone::<TimeSleeping>()
+            .rollback_component_with_clone::<Sleeping>()
+            //Custom
+            .rollback_component_with_clone::<Grounded>()
             .checksum_component::<Position>(|position| {
                 let mut bytes: Vec<u8> = Vec::new();
                 bytes.extend(position.x.to_ne_bytes());
                 bytes.extend(position.y.to_ne_bytes());
                 fletcher16(&bytes) as u64
             })
-            // .rollback_component_with_clone::<Collisions>()
+            .checksum_component::<LinearVelocity>(|velocity| {
+                let mut bytes: Vec<u8> = Vec::new();
+                bytes.extend(velocity.x.to_ne_bytes());
+                bytes.extend(velocity.y.to_ne_bytes());
+                fletcher16(&bytes) as u64
+            })
+            .checksum_component::<Rotation>(|rotation| {
+                let mut bytes: Vec<u8> = Vec::new();
+                bytes.extend(rotation.cos.to_ne_bytes());
+                bytes.extend(rotation.sin.to_ne_bytes());
+                fletcher16(&bytes) as u64
+            })
             .set_rollback_schedule_fps(TARGET_FPS)
             .add_systems(Startup, start_matchbox_socket)
             .add_systems(ReadInputs, read_local_inputs)
