@@ -57,7 +57,7 @@ pub fn wait_for_payers(
         .with_input_delay(1)
         .with_fps(TARGET_FPS)
         .unwrap()
-        .with_max_prediction_window(8)
+        .with_max_prediction_window(12)
         // If Saving game state >>> advancing game state
         .with_sparse_saving_mode(false)
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 1 });
@@ -157,7 +157,7 @@ impl Plugin for MultiplayerPlugin {
             .rollback_resource_with_clone::<Collisions>()
             //Time
             .rollback_resource_with_clone::<Time<Physics>>()
-            .rollback_resource_with_clone::<Time>()
+            // .rollback_resource_with_clone::<Time>()
             .rollback_component_with_clone::<TimeSleeping>()
             .rollback_component_with_clone::<Sleeping>()
             //Custom

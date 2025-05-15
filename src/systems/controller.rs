@@ -101,9 +101,9 @@ impl From<CharacterCollider> for CharacterControllerBundle {
                 let collision_mask = CollisionLayers::from(value);
                 let collider = Collider::from(value);
 
-                let accel = 7.0;
-                let damping = 0.9;
-                let jump_impulse = 50.;
+                let accel = 7.0 * 60.;
+                let damping = 5.;
+                let jump_impulse = 3000.;
                 let slope_angle = (45. as Scalar).to_radians();
                 let jump_height = 100.;
                 Self::new(collider, LayerEnum::Wall, collision_mask).with_movement(
