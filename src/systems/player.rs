@@ -17,14 +17,13 @@ pub struct Player {
     pub handle: usize,
 }
 
-#[derive(Bundle, Default, LdtkEntity)]
+#[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
 
     pub character_controller: CharacterControllerBundle,
     pub no_sleep: SleepingDisabled,
 
-    #[sprite_sheet]
     pub sprite_sheet: Sprite,
     pub transform: Transform,
 }
@@ -36,7 +35,6 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, movement::move_players)
             .add_event::<SpawnPlayerEvent>()
             .register_ldtk_entity::<SpawnPointBundle>("SpawnPoint")
-            .add_systems(Last, spawn_player.run_if(in_state(GameState::Playing)))
-            .register_ldtk_entity::<PlayerBundle>("Player");
+            .add_systems(Last, spawn_player.run_if(in_state(GameState::Playing)));
     }
 }

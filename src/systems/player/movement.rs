@@ -1,12 +1,9 @@
+use crate::prelude::*;
 use crate::systems::controller::{
-    CharacterController, Grounded, JumpPower, MaxSlopeAngle, MovementAcceleration, MovementAction,
+    CharacterController, Grounded, MaxJumpHeight, MaxSlopeAngle, MovementAction,
     MovementDampingFactor, MovementEvent,
 };
-use avian2d::{
-    math::{Scalar, Vector},
-    prelude::*,
-};
-use bevy::prelude::*;
+use avian2d::math::{Scalar, Vector};
 use bevy_ggrs::{GgrsTime, Rollback};
 
 use super::Player;
@@ -14,18 +11,8 @@ use super::Player;
 const MOVE_SPEED: f32 = 20.0;
 
 pub fn move_players(
-    mut players: Query<
-        (
-            &mut LinearVelocity,
-            &Player,
-            &MovementAcceleration,
-            &JumpPower,
-            Has<Grounded>,
-        ),
-        With<Rollback>,
-    >,
+    mut players: Query<(&Player, &MaxJumpHeight, &mut TnuaController)>,
     mut movement_events: EventReader<MovementEvent>,
-    time: Res<Time<GgrsTime>>,
 ) {
     let mut latest_moves = std::collections::HashMap::new();
     let mut jumps = Vec::new();
@@ -43,42 +30,37 @@ pub fn move_players(
         }
     }
 
-    for (mut velocity, player, acceleration, jump_power, is_grounded) in &mut players {
-        let mut horizontal = velocity.x;
-        let mut vertical = velocity.y;
-
+    for (player, jump_height, mut controller) in &mut players {
+        let mut desired_velocity = Vec3::new(0., 0., 0.);
         if let Some(dir) = latest_moves.get(&player.handle) {
-            if *dir != Vec2::ZERO {
-                let direction = dir.normalize();
-                horizontal += direction.x * acceleration.0 * time.delta_secs();
-
-                horizontal = horizontal.clamp(-MOVE_SPEED, MOVE_SPEED);
-            }
+            desired_velocity = dir.extend(0.0);
         }
+        info!(
+            "Player {} walks {} and jumps {}",
+            &player.handle,
+            desired_velocity,
+            jumps.contains(&player.handle)
+        );
 
-        if jumps.contains(&player.handle) && is_grounded {
-            vertical = jump_power.0 * time.delta_secs();
+        controller.basis(TnuaBuiltinWalk {
+            desired_velocity: desired_velocity.normalize_or_zero() * 30.0,
+            float_height: 1.5,
+            ..Default::default()
+        });
+
+        if jumps.contains(&player.handle) {
+            controller.action(TnuaBuiltinJump {
+                height: jump_height.0,
+                ..Default::default()
+            })
         }
-
-        // For some reason, if you wanted to zero out a velocity and it happens
-        // that the two players are in contact, it will cause a desync in Avian
-        let new_vel_x = if horizontal != 0. {
-           horizontal
-        } else {
-           velocity.x
-        };
-        
-        let new_vel_y = if vertical != 0. { vertical } else { velocity.y };
-
-        velocity.x = new_vel_x;
-        velocity.y = new_vel_y;
     }
 }
 
 /// Slows down movement in the X direction.
 pub fn apply_movement_damping(
     mut query: Query<(&MovementDampingFactor, &mut LinearVelocity), With<Rollback>>,
-    time: Res<Time<GgrsTime>>
+    time: Res<Time<GgrsTime>>,
 ) {
     for (damping_factor, mut linear_velocity) in &mut query {
         linear_velocity.x *= 1.0 - (damping_factor.0 * time.delta_secs());
@@ -202,8 +184,12 @@ pub fn kinematic_controller_collisions(
         for manifold in contacts.manifolds.iter() {
             // Sort contacts by penetration depth for deterministic resolution
             let mut sorted_contacts: Vec<_> = manifold.contacts.iter().collect();
-            sorted_contacts.sort_by(|a, b| b.penetration.partial_cmp(&a.penetration).unwrap_or(std::cmp::Ordering::Equal));
-            
+            sorted_contacts.sort_by(|a, b| {
+                b.penetration
+                    .partial_cmp(&a.penetration)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+
             let normal = if is_first {
                 -manifold.global_normal1(rotation)
             } else {

@@ -83,7 +83,8 @@ pub fn wait_for_payers(
             player: Player { handle: i },
             sprite_sheet,
             character_controller: CharacterControllerBundle::from(CharacterCollider::Player),
-            ..Default::default()
+            no_sleep: SleepingDisabled,
+            transform: Transform::default(),
         });
         if player == PlayerType::Local {
             player_c.insert(Local);

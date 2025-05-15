@@ -1,8 +1,9 @@
-use avian2d::math::{PI, Scalar, Vector};
-use avian2d::prelude::*;
-use bevy::prelude::*;
+use crate::prelude::*;
+use avian2d::math::{PI, Scalar};
 use bevy_ggrs::ggrs::InputStatus;
 use bevy_ggrs::{PlayerInputs, Rollback};
+use bevy_tnua::prelude::TnuaController;
+use bevy_tnua_avian2d::TnuaAvian2dSensorShape;
 use collision_masks::LayerEnum;
 
 use crate::config::*;
@@ -83,14 +84,15 @@ impl Default for MovementBundle {
     }
 }
 
-#[derive(Clone, Default, Bundle)]
+#[derive(Bundle)]
 pub struct CharacterControllerBundle {
     collider: Collider,
     body: RigidBody,
     controller: CharacterController,
     collision_mask: CollisionLayers,
+    tnua_controller: TnuaController,
+    sensor_shape: TnuaAvian2dSensorShape,
     movement: MovementBundle,
-    ground_caster: ShapeCaster,
     locked_axes: LockedAxes,
 }
 
@@ -101,65 +103,29 @@ impl From<CharacterCollider> for CharacterControllerBundle {
                 let collision_mask = CollisionLayers::from(value);
                 let collider = Collider::from(value);
 
-                let accel = 7.0 * 60.;
-                let damping = 5.;
-                let jump_impulse = 3000.;
-                let slope_angle = (45. as Scalar).to_radians();
-                let jump_height = 100.;
-                Self::new(collider, LayerEnum::Wall, collision_mask).with_movement(
-                    accel,
-                    damping,
-                    jump_impulse,
-                    slope_angle,
-                    jump_height,
-                )
+                Self::new(collider, collision_mask)
             }
         }
     }
 }
 
 impl CharacterControllerBundle {
-    pub fn new(
-        collider: Collider,
-        collision_layer: LayerEnum,
-        collision_mask: CollisionLayers,
-    ) -> Self {
-        // Create shape caster as a slightly smaller version of collider
-        let mut caster_shape = collider.clone();
-        let query_filter = SpatialQueryFilter::from_mask(collision_layer.to_bits());
-        caster_shape.set_scale(Vector::ONE * 0.99, 1);
-
+    pub fn new(collider: Collider, collision_mask: CollisionLayers) -> Self {
+        let mut sensor_shape = collider.clone();
+        sensor_shape.set_scale(Vec2::new(0.99, 0.99), 1);
         Self {
             controller: CharacterController,
-            body: RigidBody::Kinematic,
+            body: RigidBody::Dynamic,
             collider,
             collision_mask,
-            ground_caster: ShapeCaster::new(caster_shape, Vector::ZERO, 0.0, Dir2::NEG_Y)
-                .with_max_distance(0.1)
-                .with_query_filter(query_filter),
+            tnua_controller: TnuaController::default(),
+            sensor_shape: TnuaAvian2dSensorShape(sensor_shape),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::default(),
+            movement: MovementBundle::new(0., 0., 0., 0., 100.),
         }
     }
-
-    pub fn with_movement(
-        mut self,
-        acceleration: Scalar,
-        damping: Scalar,
-        jump_impulse: Scalar,
-        max_slope_angle: Scalar,
-        max_jump_height: Scalar,
-    ) -> Self {
-        self.movement = MovementBundle::new(
-            acceleration,
-            damping,
-            jump_impulse,
-            max_slope_angle,
-            max_jump_height,
-        );
-        self
-    }
 }
+
 /// Process inputs and emit movement events
 pub fn process_inputs(
     inputs: Res<PlayerInputs<MultiplayerConfig>>,

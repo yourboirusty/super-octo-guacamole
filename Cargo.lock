@@ -739,6 +739,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy-tnua"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d43e61093693fcee2b2d60d73399e5d858477bda0a1429dfce3083786994ae44"
+dependencies = [
+ "bevy",
+ "bevy-tnua-physics-integration-layer",
+ "thiserror 2.0.12",
+]
+
+[[package]]
+name = "bevy-tnua-avian2d"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4037f6acd50ab86c6fe7c98ce00181db605f78c081659aae47d6e41ccb00724"
+dependencies = [
+ "avian2d",
+ "bevy",
+ "bevy-tnua-physics-integration-layer",
+]
+
+[[package]]
+name = "bevy-tnua-physics-integration-layer"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "232c1e1ec5d23b7db361a5d6fd2fc72d4a1eb50f93ff73df9242fec7135f5ad8"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_a11y"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5041,6 +5072,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "ordered-float",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "simba",
@@ -5068,6 +5100,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "ordered-float",
+ "rayon",
  "rustc-hash 2.1.1",
  "serde",
  "simba",
@@ -7072,6 +7105,8 @@ dependencies = [
  "avian2d",
  "bevy",
  "bevy-inspector-egui",
+ "bevy-tnua",
+ "bevy-tnua-avian2d",
  "bevy_ecs_ldtk",
  "bevy_ggrs",
  "bevy_matchbox",
