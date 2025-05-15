@@ -121,7 +121,7 @@ impl CharacterControllerBundle {
             tnua_controller: TnuaController::default(),
             sensor_shape: TnuaAvian2dSensorShape(sensor_shape),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::new(0., 0., 0., 0., 100.),
+            movement: MovementBundle::new(0., 0., 0., 0., 15.),
         }
     }
 }
