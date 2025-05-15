@@ -1,12 +1,19 @@
+use std::process;
+
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_ggrs::GgrsTime;
 use config::LEVEL_IIDS;
 use game::GameState;
 use systems::{
     check_asset_loading,
     controller::{ControllerPlugin, MovementEvent, process_inputs},
+    frame_logging::{
+        CurrentSessionFrame, RollbackStatus, 
+        update_current_session_frame, update_rollback_status,
+    },
     multiplayer::MultiplayerPlugin,
     player::{
         PlayerPlugin,
@@ -39,7 +46,8 @@ fn main() {
             })
             .set(ImagePlugin::default_nearest()),
         LdtkPlugin,
-        PhysicsPlugins::new(bevy_ggrs::GgrsSchedule).with_length_unit(12.0),
+        PhysicsPlugins::new(bevy_ggrs::GgrsSchedule)
+            .with_length_unit(12.0),
         PlayerPlugin,
         MultiplayerPlugin,
         ControllerPlugin,
@@ -55,6 +63,8 @@ fn main() {
         ..Default::default()
     })
     .insert_resource(Gravity(Vec2::NEG_Y * 84.0))
+    .insert_resource(RollbackStatus::default())
+    .insert_resource(CurrentSessionFrame::default())
     .init_state::<GameState>()
     .add_systems(Startup, systems::setup)
     .add_systems(
@@ -77,6 +87,8 @@ fn main() {
     app.add_systems(
         bevy_ggrs::GgrsSchedule,
         (
+            update_current_session_frame,
+            update_rollback_status,
             process_inputs,
             move_players,
             update_grounded,
@@ -90,7 +102,9 @@ fn main() {
 
     app.add_systems(
         bevy_ggrs::GgrsSchedule,
-        (kinematic_controller_collisions, apply_deferred).after(PhysicsSet::StepSimulation),
+        (kinematic_controller_collisions, apply_deferred)
+            .chain()
+            .before(PhysicsSet::Sync),
     );
 
     app.run();
