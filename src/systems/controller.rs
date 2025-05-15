@@ -135,7 +135,7 @@ impl CharacterControllerBundle {
             collider,
             collision_mask,
             ground_caster: ShapeCaster::new(caster_shape, Vector::ZERO, 0.0, Dir2::NEG_Y)
-                .with_max_distance(1.0)
+                .with_max_distance(0.1)
                 .with_query_filter(query_filter),
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::default(),

@@ -148,8 +148,17 @@ pub fn kinematic_controller_collisions(
     >,
     time: Res<Time<GgrsTime>>,
 ) {
-    // Iterate through collisions and move the kinematic body to resolve penetration
-    for contacts in collisions.iter() {
+    // Sort collisions by entity IDs for deterministic ordering
+    let mut sorted_collisions: Vec<_> = collisions.iter().collect();
+    sorted_collisions.sort_by(|a, b| {
+        let a_min = a.entity1.min(a.entity2);
+        let a_max = a.entity1.max(a.entity2);
+        let b_min = b.entity1.min(b.entity2);
+        let b_max = b.entity1.max(b.entity2);
+        (a_min, a_max).cmp(&(b_min, b_max))
+    });
+
+    for contacts in sorted_collisions {
         // Get the rigid body entities of the colliders (colliders could be children)
         let Ok([collider_parent1, collider_parent2]) =
             collider_parents.get_many([contacts.entity1, contacts.entity2])
@@ -191,6 +200,10 @@ pub fn kinematic_controller_collisions(
         // Iterate through contact manifolds and their contacts.
         // Each contact in a single manifold shares the same contact normal.
         for manifold in contacts.manifolds.iter() {
+            // Sort contacts by penetration depth for deterministic resolution
+            let mut sorted_contacts: Vec<_> = manifold.contacts.iter().collect();
+            sorted_contacts.sort_by(|a, b| b.penetration.partial_cmp(&a.penetration).unwrap_or(std::cmp::Ordering::Equal));
+            
             let normal = if is_first {
                 -manifold.global_normal1(rotation)
             } else {
@@ -199,10 +212,15 @@ pub fn kinematic_controller_collisions(
 
             let mut deepest_penetration: Scalar = Scalar::MIN;
 
-            // Solve each penetrating contact in the manifold.
-            for contact in manifold.contacts.iter() {
+            for contact in sorted_contacts {
                 if contact.penetration > 0.0 {
-                    position.0 += normal * contact.penetration;
+                    // Scale position correction for ground contacts to prevent bounce
+                    let correction = if normal.dot(Vector::Y) > 0.0 {
+                        normal * contact.penetration * 0.5
+                    } else {
+                        normal * contact.penetration
+                    };
+                    position.0 += correction;
                 }
                 deepest_penetration = deepest_penetration.max(contact.penetration);
             }
@@ -228,6 +246,10 @@ pub fn kinematic_controller_collisions(
                     // The movement speed along the direction above.
                     let linear_velocity_x = linear_velocity.dot(normal_direction_x);
 
+                    // Only dampen velocity if we're moving downward
+                    if normal.dot(Vector::Y) > 0.0 && linear_velocity.y < 0.0 {
+                        linear_velocity.y *= 0.5;
+                    }
                     // Snap the Y speed based on the speed at which the character is moving
                     // up or down the slope, and how steep the slope is.
                     //
@@ -241,7 +263,6 @@ pub fn kinematic_controller_collisions(
                     // │           *       | velocity_y
                     // │               *   |
                     // *───────────────────*
-
                     let max_y_speed = -linear_velocity_x * slope_angle.tan();
                     linear_velocity.y = linear_velocity.y.max(max_y_speed);
                 } else {
@@ -278,7 +299,10 @@ pub fn kinematic_controller_collisions(
 
                 // Apply the impulse differently depending on the slope angle.
                 if climbable {
-                    // Avoid sliding down slopes.
+                    // Only dampen velocity if we're moving downward
+                    if normal.dot(Vector::Y) > 0.0 && linear_velocity.y < 0.0 {
+                        linear_velocity.y *= 0.5;
+                    }
                     linear_velocity.y -= impulse.y.min(0.0);
                 } else {
                     // Avoid climbing up walls.
