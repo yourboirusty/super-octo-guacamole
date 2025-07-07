@@ -16,6 +16,7 @@ bevy_ecs_ldtk = {version = "0.11.0", features = [ "atlas" ]}
 
 bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }
 bevy_matchbox = { version = "0.11", features = ["ggrs"] }
+getrandom = { version = "0.3.3", features=["wasm_js"] }
 
 [features]
 default = ["dev"]
